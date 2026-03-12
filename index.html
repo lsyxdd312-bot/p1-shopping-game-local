@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>正覺市集 (單機版)</title>
+<style>
+    /* CSS 樣式與之前完全相同，此處省略以節省篇幅 */
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: #f0f9ff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px 0; }
+    h1, h2 { color: #0056b3; }
+    #main-container { width: 90%; max-width: 800px; }
+    #login-container { text-align: center; background: white; padding: 30px 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    #login-container h1 { color: #d4a017; }
+    .game-instructions { font-size: 1.1em; color: #555; margin-top: -10px; margin-bottom: 25px; }
+    .login-row { display: flex; justify-content: center; align-items: center; gap: 30px; margin: 20px 0; }
+    .login-field { font-size: 1.2em; }
+    .login-field label { margin-right: 10px; }
+    .login-field select { font-size: 1em; padding: 8px; border-radius: 8px; border: 1px solid #ccc; }
+    .difficulty-selection { margin-top: 20px; }
+    .difficulty-option { margin: 10px 0; font-size: 1.2em; }
+    .difficulty-option label { margin-left: 8px; }
+    #leaderboard-container { margin-top: 30px; text-align: center; }
+    #leaderboard-container h2 { color: #d4a017; }
+    #leaderboard-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    #leaderboard-table th, td { padding: 10px; border: 1px solid #ddd; }
+    #leaderboard-table th { background-color: #f2f2f2; }
+    #leaderboard-message { color: #888; }
+    #game-container { display: none; background-color: #ffffff; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 700px; }
+    #game-container h1 { color: #d4a017; }
+    #game-container .game-instructions { margin-top: -15px; font-size: 1em; }
+    #game-status { display: flex; justify-content: space-around; background-color: #f8f9fa; padding: 10px; border-radius: 10px; margin-bottom: 20px; font-size: 1.4em; font-weight: bold; }
+    #timer-display { color: #dc3545; }
+    #score-display { color: #198754; }
+    #item-display { margin: 15px 0; padding: 15px; background-color: #e6f7ff; border: 2px dashed #91d5ff; border-radius: 15px; }
+    #item-name { font-size: 2.5em; }
+    #item-price { font-size: 2em; font-weight: bold; color: #d9534f; margin-top: 10px; }
+    .coin-area { margin-top: 15px; padding: 10px; border-radius: 15px; min-height: 90px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; }
+    #wallet-area { background-color: #fffbe6; border: 2px solid #fadb14; }
+    #payment-area { background-color: #f6ffed; border: 2px solid #b7eb8f; }
+    .coin { width: 55px; height: 55px; cursor: pointer; user-select: none; transition: transform 0.2s; }
+    .coin img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; pointer-events: none; }
+    #total-paid { font-size: 1.5em; font-weight: bold; color: #198754; }
+    .btn { font-size: 1.1em; padding: 12px 25px; border-radius: 8px; border: none; cursor: pointer; margin: 10px 5px; color: white; transition: background-color 0.3s, opacity 0.3s; }
+    .btn:disabled { background-color: #6c757d; cursor: not-allowed; opacity: 0.7; }
+    #start-button, #pay-button { background-color: #198754; }
+    #skip-button { background-color: #0d6efd; }
+    #modal-restart-button { background-color: #fd7e14; }
+    #feedback { margin-top: 15px; font-size: 1.3em; font-weight: bold; min-height: 25px; }
+    #designer-credit { position: fixed; bottom: 10px; right: 15px; font-size: 0.8em; color: #888; }
+    .modal-background { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+    .modal-content { background-color: #fff; padding: 30px 40px; border-radius: 15px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+    .modal-content h2 { font-size: 2em; color: #dc3545; }
+    .modal-content p { font-size: 1.5em; margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<div id="main-container">
+    <!-- 登入畫面 -->
+    <div id="login-container">
+        <h1>🛒 歡迎來到正覺市集 🛒</h1>
+        <p class="game-instructions">玩法：選出需付的貨幣 (不設找續)</p>
+        <div class="login-row">
+            <div class="login-field"><label for="class-select">班別:</label><select id="class-select"><option value="1A">1A</option><option value="1B">1B</option><option value="1C">1C</option><option value="1D">1D</option><option value="1E">1E</option></select></div>
+            <div class="login-field"><label for="id-select">學號:</label><select id="id-select"></select></div>
+        </div>
+        <div class="difficulty-selection">
+            <div class="difficulty-option"><input type="radio" id="difficulty1" name="difficulty" value="1" checked><label for="difficulty1">難度一 (10元以下)</label></div>
+            <div class="difficulty-option"><input type="radio" id="difficulty2" name="difficulty" value="2"><label for="difficulty2">難度二 (20元以下)</label></div>
+        </div>
+        <button id="start-button" class="btn">開始遊戲</button>
+    </div>
+    
+    <!-- 排行榜 -->
+    <div id="leaderboard-container">
+        <h2>🏆 英雄排行榜 🏆</h2>
+        <p id="leaderboard-message">讀取排行榜中...</p>
+        <table id="leaderboard-table" style="display:none;">
+            <thead><tr><th>排名</th><th>班別</th><th>學號</th><th>分數</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 遊戲主畫面 -->
+<div id="game-container">
+    <h1 id="game-title">🛒 正覺市集 🛒</h1>
+    <p class="game-instructions">玩法：選出需付的貨幣 (不設找續)</p>
+    <div id="game-status"><div id="timer-display">時間: 01:00</div><div id="score-display">分數: 0</div></div>
+    <div id="item-display"><div id="item-name"></div><div id="item-price"></div></div>
+    <h2>我的錢包</h2><div id="wallet-area" class="coin-area"></div>
+    <h2>我付的錢</h2><div id="payment-area" class="coin-area"></div>
+    <div id="total-paid">總金額: $0.00</div>
+    <button id="pay-button" class="btn">付款</button>
+    <button id="skip-button" class="btn">跳過此題</button>
+    <div id="feedback"></div>
+</div>
+
+<!-- 遊戲結束彈出視窗 -->
+<div id="end-game-modal" class="modal-background">
+    <div class="modal-content">
+        <h2>時間到！</h2>
+        <p id="final-score-message">您的總分是 0 分！</p>
+        <button id="modal-restart-button" class="btn">返回主畫面</button>
+    </div>
+</div>
+
+<div id="designer-credit">designed by Miss Lui SY</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 介面元素 (與之前相同)
+    const mainContainer=document.getElementById('main-container'),loginContainer=document.getElementById('login-container'),gameContainer=document.getElementById('game-container'),classSelect=document.getElementById('class-select'),idSelect=document.getElementById('id-select'),startButton=document.getElementById('start-button'),leaderboardTable=document.getElementById('leaderboard-table').getElementsByTagName('tbody')[0],leaderboardMsg=document.getElementById('leaderboard-message'),endGameModal=document.getElementById('end-game-modal'),finalScoreMessage=document.getElementById('final-score-message'),modalRestartButton=document.getElementById('modal-restart-button'),itemNameEl=document.getElementById('item-name'),itemPriceEl=document.getElementById('item-price'),walletArea=document.getElementById('wallet-area'),paymentArea=document.getElementById('payment-area'),totalPaidEl=document.getElementById('total-paid'),feedbackEl=document.getElementById('feedback'),payButton=document.getElementById('pay-button'),skipButton=document.getElementById('skip-button'),timerDisplay=document.getElementById('timer-display'),scoreDisplay=document.getElementById('score-display');
+    
+    // 遊戲狀態 (與之前相同)
+    let currentPrice=0,score=0,gameTimer,timeLeft=60,isGameActive=false,hasUsedSkip=false,currentUser={userClass:'',userId:''},selectedDifficulty=1;
+    const items=[{name:'🍎'},{name:'📘'},{name:'✏️'},{name:'🍬'},{name:'🧸'},{name:'⚽'},{name:'🥤'},{name:'🍗'},{name:'🍦'},{name:'🍞'},{name:'🍟'},{name:'🌭'}];
+    const denominations=[{value:10,img:'coins/10d.jpg'},{value:5,img:'coins/5d.jpg'},{value:2,img:'coins/2d.jpg'},{value:1,img:'coins/1d.jpg'},{value:0.5,img:'coins/50c.jpg'},{value:0.2,img:'coins/20c.jpg'},{value:0.1,img:'coins/10c.jpg'}];
+
+    function init() {
+        for (let i = 1; i <= 30; i++) { const option = document.createElement('option'); option.value = i; option.textContent = i; idSelect.appendChild(option); }
+        startButton.addEventListener('click', startGame);
+        modalRestartButton.addEventListener('click', () => location.reload());
+        displayLeaderboard(); // 改為從 localStorage 讀取
+    }
+
+    // ==================【排行榜邏輯修改】==================
+    // 使用 localStorage 的鍵
+    const LEADERBOARD_KEY = 'chingkokMarketLeaderboard';
+
+    // 顯示排行榜 (從 localStorage 讀取)
+    function displayLeaderboard() {
+        const scores = JSON.parse(localStorage.getItem(LEADERBOARD_KEY) || '[]');
+        
+        if (scores.length > 0) {
+            leaderboardMsg.style.display = 'none';
+            leaderboardTable.parentNode.style.display = 'table';
+            leaderboardTable.innerHTML = '';
+            
+            // 排序並顯示
+            scores.sort((a, b) => b.分數 - a.分數);
+            
+            scores.slice(0, 10).forEach((entry, index) => {
+                const row = leaderboardTable.insertRow();
+                row.insertCell(0).textContent = index + 1;
+                row.insertCell(1).textContent = entry.班別;
+                row.insertCell(2).textContent = entry.學號;
+                row.insertCell(3).textContent = entry.分數;
+            });
+        } else {
+            leaderboardMsg.textContent = "排行榜目前沒有記錄。";
+        }
+    }
+
+    // 儲存分數 (到 localStorage)
+    function saveScore(userClass, userId, newScore) {
+        const scores = JSON.parse(localStorage.getItem(LEADERBOARD_KEY) || '[]');
+        const userKey = `${userClass}-${userId}`;
+        const userIndex = scores.findIndex(entry => `${entry.班別}-${entry.學號}` === userKey);
+
+        if (userIndex > -1) {
+            // 如果找到該學生的記錄，只在分數更高時更新
+            if (newScore > scores[userIndex].分數) {
+                scores[userIndex].分數 = newScore;
+            }
+        } else {
+            // 如果是新學生，直接加入記錄
+            scores.push({ '班別': userClass, '學號': userId, '分數': newScore });
+        }
+        
+        localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(scores));
+    }
+    // ========================================================
+    
+    // 遊戲結束時，呼叫 saveScore 而不是 uploadScore
+    function endGame() {
+        clearInterval(gameTimer);
+        isGameActive = false;
+        finalScoreMessage.textContent = `您的總分是 ${score} 分！`;
+        endGameModal.style.display = 'flex';
+        saveScore(currentUser.userClass, currentUser.userId, score);
+    }
+    
+    // 其他遊戲核心邏輯 (與之前完全相同)
+    function startGame(){currentUser.userClass=classSelect.value;currentUser.userId=idSelect.value;selectedDifficulty=document.querySelector('input[name="difficulty"]:checked').value;mainContainer.style.display='none';gameContainer.style.display='block';isGameActive=true;hasUsedSkip=false;score=0;timeLeft=60;updateScore(0);skipButton.disabled=false;startTimer();generateNewRound()}
+    function startTimer(){gameTimer=setInterval(()=>{timeLeft--;timerDisplay.textContent=`時間: 00:${timeLeft.toString().padStart(2,'0')}`;if(timeLeft<=0)endGame()},1000)}
+    function generateNewRound(){if(!isGameActive)return;walletArea.innerHTML='';paymentArea.innerHTML='';feedbackEl.textContent='';updateTotal();payButton.disabled=false;let m=(selectedDifficulty==1)?91:190;generateWallet((Math.floor(Math.random()*m)+10)/10)}
+    function generateWallet(p){currentPrice=p;itemPriceEl.textContent=`$${currentPrice.toFixed(2)}`;itemNameEl.textContent=items[Math.floor(Math.random()*items.length)].name;let s=[],w=[],r=p;for(const d of denominations){while(r>=d.value-0.001){s.push(d);r-=d.value}}w.push(...s);let t=p;const T=p*(Math.random()*0.6+1.2);while(t<T){let d=denominations[Math.floor(Math.random()*denominations.length)];w.push(d);t+=d.value}w.sort(()=>Math.random()-0.5);w.forEach(c=>createCoinElement(c,walletArea))}
+    function createCoinElement(c,t){const e=document.createElement('div');e.className='coin';e.dataset.value=c.value;const i=document.createElement('img');i.src=c.img;i.alt=`$${c.value}`;e.appendChild(i);t.appendChild(e);e.addEventListener('click',handleCoinClick)}
+    function handleCoinClick(e){if(!isGameActive)return;const c=e.currentTarget;c.parentNode.id==='wallet-area'?paymentArea.appendChild(c):walletArea.appendChild(c);updateTotal()}
+    function updateTotal(){let t=0;paymentArea.querySelectorAll('.coin').forEach(c=>t+=parseFloat(c.dataset.value));totalPaidEl.textContent=`總金額: $${t.toFixed(2)}`}
+    function updateScore(p){score+=p;scoreDisplay.textContent=`分數: ${score}`}
+    payButton.addEventListener('click',()=>{let t=0;paymentArea.querySelectorAll('.coin').forEach(c=>t+=parseFloat(c.dataset.value));if(Math.abs(t-currentPrice)<0.001){isGameActive=false;feedbackEl.textContent='✅ 付款正確！';feedbackEl.style.color='green';updateScore(20);setTimeout(()=>{isGameActive=true;generateNewRound()},1200)}else{feedbackEl.textContent='❌ 金額不對喔！';feedbackEl.style.color='red';updateScore(-5)}});
+    skipButton.addEventListener('click',()=>{if(hasUsedSkip)return;hasUsedSkip=true;skipButton.disabled=true;feedbackEl.textContent='已使用跳題機會！';generateNewRound()});
+    
+    init();
+});
+</script>
+
+</body>
+</html>
